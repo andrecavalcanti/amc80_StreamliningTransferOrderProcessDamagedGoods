@@ -21,10 +21,14 @@ codeunit 50010 "DXC Transfer Order Receive"
         WhseActivityRegister : Codeunit "Whse.-Activity-Register";
         TransferOrderPostShipment : Codeunit "TransferOrder-Post Shipment";
         ReservEntry : Record "Reservation Entry";
+        ReleaseTransferDocument : Codeunit "Release Transfer Document";
     begin
 
         if not PTransferHeader."DXC Post Automation" then
           exit;
+
+        //Release Transfer Order
+        ReleaseTransferDocument.Run(PTransferHeader);
 
         //Post Shipment
         TransferOrderPostShipment.SetHideValidationDialog(true);

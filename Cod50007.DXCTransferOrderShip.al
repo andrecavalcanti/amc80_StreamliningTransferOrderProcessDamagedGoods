@@ -23,6 +23,9 @@ codeunit 50007 "DXC Transfer Order Ship"
         if not TransHeader."DXC Post Automation" then
           exit;
 
+        //Release Transfer Order
+        ReleaseTransferDocument.Run(TransHeader);
+        
         // Create Whse. Shipment
         GetSourceDocOutbound.CreateFromOutbndTransferOrderHideDialog(TransHeader);
         GetSourceDocOutbound.DXCGetWhseShipHeader(WhseShipmentHeader);
