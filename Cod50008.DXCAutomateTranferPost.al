@@ -215,6 +215,14 @@ codeunit 50008 "DXC Automate Transfer Post"
             Bincontent.SETRANGE("Bin Code",TransLine."DXC Transfer-from Bin DPP");
     end;
 
+    [EventSubscriber(ObjectType::Page, 5742, 'OnOpenPageEvent', '', false, false)]
+    local procedure HandleOnOpenPageOnTransferOrders(var Rec : Record "Transfer Header");
+    var
+        
+    begin
+        Rec.SetRange("DXC Post Automation",false);
+    end;
+
     local procedure IsAutomation(PTransLine : Record "Transfer Line") : Boolean;
     var
         TransHeader : Record "Transfer Header";

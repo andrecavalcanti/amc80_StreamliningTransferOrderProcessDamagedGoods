@@ -530,10 +530,10 @@ page 50005 "DXC Simple Transfer Order"
         EnableTransferFields := not IsPartiallyShipped;
     end;
 
-    trigger OnDeleteRecord() : Boolean;
-    begin
-        TESTFIELD(Status,Status::Open);
-    end;
+    // trigger OnDeleteRecord() : Boolean;
+    // begin
+    //     TESTFIELD(Status,Status::Open);
+    // end;
 
     trigger OnOpenPage();
     begin
