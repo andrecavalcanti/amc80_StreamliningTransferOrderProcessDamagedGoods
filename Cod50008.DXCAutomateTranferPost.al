@@ -78,8 +78,8 @@ codeunit 50008 "DXC Automate Transfer Post"
         if not Location."Bin Mandatory" then
           Location.TESTFIELD("Bin Mandatory",true);
 
-        if not Location."Directed Put-away and Pick" then
-          Location.TESTFIELD("Directed Put-away and Pick",true);
+        // if not Location."Directed Put-away and Pick" then
+        //   Location.TESTFIELD("Directed Put-away and Pick",true);
     end;
 
     [EventSubscriber(ObjectType::Table, 5741, 'OnBeforeValidateEvent', 'DXC Transfer-from Bin DPP', false, false)]
@@ -193,11 +193,11 @@ codeunit 50008 "DXC Automate Transfer Post"
 
         GetLocation(Rec."Transfer-from Code");
 
-        if not Location."Bin Mandatory" then
-          Rec.TESTFIELD("DXC Transfer-To Bin DPP",'');
+        // if not Location."Bin Mandatory" then
+          // Rec.TESTFIELD("DXC Transfer-To Bin DPP",'');
 
-        if not Location."Directed Put-away and Pick" then
-          Rec.TESTFIELD("DXC Transfer-To Bin DPP",'');
+        // if not Location."Directed Put-away and Pick" then
+          // Rec.TESTFIELD("DXC Transfer-To Bin DPP",'');
 
         GetBin(Rec."Transfer-to Code",Rec."DXC Transfer-To Bin DPP");
 
