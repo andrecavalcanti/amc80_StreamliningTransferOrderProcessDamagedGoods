@@ -477,7 +477,7 @@ page 50005 "DXC Simple Transfer Order"
                                 ESM='Permite finalizar el documento o el diario registrando los importes y las cantidades en las cuentas relacionadas de los libros de su empresa.',
                                 FRC='Finalisez le document ou le journal en reportant les montants et les quantités sur les comptes concernés dans les registres de la compagnie.',
                                 ENC='Finalize the document or journal by posting the amounts and quantities to the related accounts in your company books.';
-
+                    // Visible = false;
                     trigger OnAction();
                     var
                         TransferOrderShip : Codeunit "DXC Transfer Order Ship";
@@ -503,13 +503,67 @@ page 50005 "DXC Simple Transfer Order"
                                 ESM='Permite finalizar el documento o el diario registrando los importes y las cantidades en las cuentas relacionadas de los libros de su empresa.',
                                 FRC='Finalisez le document ou le journal en reportant les montants et les quantités sur les comptes concernés dans les registres de la compagnie.',
                                 ENC='Finalize the document or journal by posting the amounts and quantities to the related accounts in your company books.';
-
+                    // Visible = false;
                     trigger OnAction();
                     var
                         TransferOrderReceive : Codeunit "DXC Transfer Order Receive";
                     begin
 
                         TransferOrderReceive.Post(Rec);
+                    end;
+                }
+
+                 action(DXCPost)
+                {
+                    ApplicationArea = Location;
+                    CaptionML = ENU='Post',
+                                ESM='&Registrar',
+                                FRC='Rep&orter',
+                                ENC='P&ost';
+                    Ellipsis = true;
+                    Image = PostOrder;
+                    Promoted = true;
+                    PromotedCategory = Category5;
+                    PromotedIsBig = true;
+                    PromotedOnly = true;
+                    ShortCutKey = 'F9';
+                    Visible = false;
+                    ToolTipML = ENU='Finalize the document or journal by posting the amounts and quantities to the related accounts in your company books.',
+                                ESM='Permite finalizar el documento o el diario registrando los importes y las cantidades en las cuentas relacionadas de los libros de su empresa.',
+                                FRC='Finalisez le document ou le journal en reportant les montants et les quantités sur les comptes concernés dans les registres de la compagnie.',
+                                ENC='Finalize the document or journal by posting the amounts and quantities to the related accounts in your company books.';
+
+                    trigger OnAction();
+                    var
+                        TransferOrderReceive : Codeunit "DXC Transfer Order Receive";
+                        TransferOrderShip : Codeunit "DXC Transfer Order Ship";
+                        TransferLine : Record "Transfer Line";
+                    begin
+                        TransferLine.SetRange("Document No.",Rec."No."); 
+                        if TransferLine.FindFirst then begin
+                            // if (TransferLine."Transfer-from Bin Code" <> '') then
+                            //     TransferOrderShip.Post(Rec);  
+                            // if (TransferLine."Transfer-to Bin Code" = '') then
+                            //     TransferOrderReceive.Post(Rec);
+                            // Ship
+                            // if ((TransferLine."Transfer-from Bin Code" <> '') AND (TransferLine."DXC Transfer-to Bin DPP" <> '')) then
+                            //     TransferOrderShip.Post(Rec);
+                            // if ((TransferLine."DXC Transfer-from Bin DPP" <> '') AND (TransferLine."Transfer-to Bin Code" <> '')) then
+                            //     TransferOrderShip.Post(Rec);
+                            //  if ((TransferLine."Transfer-from Bin Code" <> '') AND (TransferLine."DXC Transfer-to Bin DPP" = '')) then
+                            //     TransferOrderShip.Post(Rec);
+                            // if ((TransferLine."DXC Transfer-from Bin DPP" <> '') AND (TransferLine."Transfer-to Bin Code" = '')) then
+                            //     TransferOrderShip.Post(Rec);
+                            // Receive
+                            // if ((TransferLine."Transfer-to Bin Code" <> '') AND (TransferLine."DXC Transfer-from Bin DPP" <> '')) then
+                            //     TransferOrderReceive.Post(Rec);
+                            // if ((TransferLine."DXC Transfer-to Bin DPP" <> '') AND (TransferLine."Transfer-from Bin Code" <> '')) then
+                            //     TransferOrderReceive.Post(Rec);
+                            // if ((TransferLine."Transfer-to Bin Code" <> '') AND (TransferLine."DXC Transfer-from Bin DPP" = '')) then
+                            //     TransferOrderReceive.Post(Rec);
+                            // if ((TransferLine."DXC Transfer-to Bin DPP" <> '') AND (TransferLine."Transfer-from Bin Code" = '')) then
+                            //     TransferOrderReceive.Post(Rec);
+                        end;                         
                     end;
                 }
             }

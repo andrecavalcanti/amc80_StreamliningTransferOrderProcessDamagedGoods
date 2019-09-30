@@ -10,23 +10,23 @@
             // "serverInstance": "NAV",                   
             // "port"  : 7049,
             // "authentication":"UserPassword",   
-           // ---------------TEST ---------------         
+        //    // ---------------TEST ---------------         
+        //    "name": "Your own server",
+        //    "server": "http://10.2.16.181",                    
+        //    "serverInstance": "CRE-NAV-TEST",
+        //    "port"  : 7049, 
+        //    "authentication": "Windows",
+           // ---------------DEV ---------------         
            "name": "Your own server",
            "server": "http://10.2.16.181",                    
-           "serverInstance": "CRE-NAV-TEST",
-           "port"  : 7049, 
+           "serverInstance": "CRE-NAV-DEV",
+           "port"  : 8049, 
            "authentication": "Windows",
-           // ---------------DEV ---------------         
-           // "name": "Your own server",
-           // "server": "http://10.2.16.181",                    
-           // "serverInstance": "CRE-NAV-DEV",
-           // "port"  : 8049, 
-           // "authentication": "Windows",
            //--------------------------------------         
             //"tenant": "default",
             //"startupObjectId": 22,
-           //"schemaUpdateMode": "Synchronize"
-            "schemaUpdateMode": "Recreate"
+             "schemaUpdateMode": "Synchronize"
+            // "schemaUpdateMode": "Recreate"
             //"startupObjectType": "Page",
             //"breakOnError": true
         }
