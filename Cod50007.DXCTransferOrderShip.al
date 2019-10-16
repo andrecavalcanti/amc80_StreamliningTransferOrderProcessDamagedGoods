@@ -18,50 +18,63 @@ codeunit 50007 "DXC Transfer Order Ship"
         TransferHeader2 : Record "Transfer Header";
         ReleaseTransferDocument : Codeunit "Release Transfer Document";
         TransferOrderPostReceipt : Codeunit "TransferOrder-Post Receipt";
+        FromLocation : Record Location;
+        ToLocation : Record Location;
     begin
 
         if not TransHeader."DXC Post Automation" then
           exit;
 
         //Release Transfer Order
-        ReleaseTransferDocument.Run(TransHeader);
-        
-        // Create Whse. Shipment
-        GetSourceDocOutbound.CreateFromOutbndTransferOrderHideDialog(TransHeader);
-        GetSourceDocOutbound.DXCGetWhseShipHeader(WhseShipmentHeader);
+        ReleaseTransferDocument.Run(TransHeader);                                          
 
-        // Release Whse. Shipment
-        ReleaseWhseShptDoc.Release(WhseShipmentHeader);
+        FromLocation.Get(TransHeader."Transfer-from Code");
+        ToLocation.Get(TransHeader."Transfer-to Code");
 
-        //Create Pick
-        WhseShipmentLine.SETRANGE("No.",WhseShipmentHeader."No.");
-        if WhseShipmentLine.FINDFIRST then begin
-          WhseShipmentLine2.COPY(WhseShipmentLine);
-          WhseShipmentLine.SetHideValidationDialog(true);
-          WhseShipmentLine.CreatePickDoc(WhseShipmentLine2,WhseShipmentHeader);
-        //  WhseShipmentLine.SetIgnoreErrors();
-        //  WhseShipmentLine.HasErrorOccured();
-        end;
+        if ((ToLocation."Bin Mandatory") or (FromLocation."Require Pick")) then begin
+          // Create Whse. Shipment
+          GetSourceDocOutbound.CreateFromOutbndTransferOrderHideDialog(TransHeader);
+          GetSourceDocOutbound.DXCGetWhseShipHeader(WhseShipmentHeader);
 
-        //Register Pick
-        WhseActivityLine.SETRANGE("Whse. Document Type",WhseActivityLine."Whse. Document Type"::Shipment);
-        WhseActivityLine.SETRANGE("Whse. Document No.",WhseShipmentHeader."No.");
-        if WhseActivityLine.FINDFIRST then
-          CODEUNIT.RUN(CODEUNIT::"Whse.-Activity-Register",WhseActivityLine);
+          // Release Whse. Shipment
+          ReleaseWhseShptDoc.Release(WhseShipmentHeader);
 
-        // Post Shipment
-        WhsePostShipment.SetPostingSettings(false);
-        WhsePostShipment.SetPrint(false);
-        WhsePostShipment.RUN(WhseShipmentLine);
-        //WhsePostShipment.GetResultMessage;
+          //Create Pick
+          WhseShipmentLine.SETRANGE("No.",WhseShipmentHeader."No.");
+          if WhseShipmentLine.FINDFIRST then begin
+            WhseShipmentLine2.COPY(WhseShipmentLine);
+            WhseShipmentLine.SetHideValidationDialog(true);
+            WhseShipmentLine.CreatePickDoc(WhseShipmentLine2,WhseShipmentHeader);
+          //  WhseShipmentLine.SetIgnoreErrors();
+          //  WhseShipmentLine.HasErrorOccured();
+          end;
 
-        if TransferHeader2.FINDFIRST then
-          repeat
-            if (TransferHeader2."No." = TransHeader."No.") then begin
-              CODEUNIT.RUN(CODEUNIT::"TransferOrder-Post Receipt",TransferHeader2);
-              exit;
-            end;
+          //Register Pick
+          WhseActivityLine.SETRANGE("Whse. Document Type",WhseActivityLine."Whse. Document Type"::Shipment);
+          WhseActivityLine.SETRANGE("Whse. Document No.",WhseShipmentHeader."No.");
+          if WhseActivityLine.FINDFIRST then
+            CODEUNIT.RUN(CODEUNIT::"Whse.-Activity-Register",WhseActivityLine);
+
+          // Post Shipment
+          WhsePostShipment.SetPostingSettings(false);
+          WhsePostShipment.SetPrint(false);
+          WhsePostShipment.RUN(WhseShipmentLine);
+          //WhsePostShipment.GetResultMessage;
+
+          if TransferHeader2.FINDFIRST then
+            repeat
+              if (TransferHeader2."No." = TransHeader."No.") then begin
+                CODEUNIT.RUN(CODEUNIT::"TransferOrder-Post Receipt",TransferHeader2);
+                exit;
+              end;
           until TransferHeader2.NEXT = 0;
+
+        end else begin
+          CODEUNIT.RUN(CODEUNIT::"TransferOrder-Post Shipment",TransHeader);
+          CODEUNIT.RUN(CODEUNIT::"TransferOrder-Post Receipt",TransHeader);
+        end;     
+
+       
     end;
 }
 

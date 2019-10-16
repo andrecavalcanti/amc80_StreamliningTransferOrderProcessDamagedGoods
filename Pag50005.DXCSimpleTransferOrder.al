@@ -477,7 +477,7 @@ page 50005 "DXC Simple Transfer Order"
                                 ESM='Permite finalizar el documento o el diario registrando los importes y las cantidades en las cuentas relacionadas de los libros de su empresa.',
                                 FRC='Finalisez le document ou le journal en reportant les montants et les quantités sur les comptes concernés dans les registres de la compagnie.',
                                 ENC='Finalize the document or journal by posting the amounts and quantities to the related accounts in your company books.';
-                    // Visible = false;
+                    Visible = false;
                     trigger OnAction();
                     var
                         TransferOrderShip : Codeunit "DXC Transfer Order Ship";
@@ -503,7 +503,7 @@ page 50005 "DXC Simple Transfer Order"
                                 ESM='Permite finalizar el documento o el diario registrando los importes y las cantidades en las cuentas relacionadas de los libros de su empresa.',
                                 FRC='Finalisez le document ou le journal en reportant les montants et les quantités sur les comptes concernés dans les registres de la compagnie.',
                                 ENC='Finalize the document or journal by posting the amounts and quantities to the related accounts in your company books.';
-                    // Visible = false;
+                    Visible = false;
                     trigger OnAction();
                     var
                         TransferOrderReceive : Codeunit "DXC Transfer Order Receive";
@@ -527,7 +527,7 @@ page 50005 "DXC Simple Transfer Order"
                     PromotedIsBig = true;
                     PromotedOnly = true;
                     ShortCutKey = 'F9';
-                    Visible = false;
+                    Visible = true;
                     ToolTipML = ENU='Finalize the document or journal by posting the amounts and quantities to the related accounts in your company books.',
                                 ESM='Permite finalizar el documento o el diario registrando los importes y las cantidades en las cuentas relacionadas de los libros de su empresa.',
                                 FRC='Finalisez le document ou le journal en reportant les montants et les quantités sur les comptes concernés dans les registres de la compagnie.',
@@ -541,28 +541,14 @@ page 50005 "DXC Simple Transfer Order"
                     begin
                         TransferLine.SetRange("Document No.",Rec."No."); 
                         if TransferLine.FindFirst then begin
-                            // if (TransferLine."Transfer-from Bin Code" <> '') then
-                            //     TransferOrderShip.Post(Rec);  
-                            // if (TransferLine."Transfer-to Bin Code" = '') then
-                            //     TransferOrderReceive.Post(Rec);
-                            // Ship
-                            // if ((TransferLine."Transfer-from Bin Code" <> '') AND (TransferLine."DXC Transfer-to Bin DPP" <> '')) then
-                            //     TransferOrderShip.Post(Rec);
-                            // if ((TransferLine."DXC Transfer-from Bin DPP" <> '') AND (TransferLine."Transfer-to Bin Code" <> '')) then
-                            //     TransferOrderShip.Post(Rec);
-                            //  if ((TransferLine."Transfer-from Bin Code" <> '') AND (TransferLine."DXC Transfer-to Bin DPP" = '')) then
-                            //     TransferOrderShip.Post(Rec);
-                            // if ((TransferLine."DXC Transfer-from Bin DPP" <> '') AND (TransferLine."Transfer-to Bin Code" = '')) then
-                            //     TransferOrderShip.Post(Rec);
-                            // Receive
-                            // if ((TransferLine."Transfer-to Bin Code" <> '') AND (TransferLine."DXC Transfer-from Bin DPP" <> '')) then
-                            //     TransferOrderReceive.Post(Rec);
-                            // if ((TransferLine."DXC Transfer-to Bin DPP" <> '') AND (TransferLine."Transfer-from Bin Code" <> '')) then
-                            //     TransferOrderReceive.Post(Rec);
-                            // if ((TransferLine."Transfer-to Bin Code" <> '') AND (TransferLine."DXC Transfer-from Bin DPP" = '')) then
-                            //     TransferOrderReceive.Post(Rec);
-                            // if ((TransferLine."DXC Transfer-to Bin DPP" <> '') AND (TransferLine."Transfer-from Bin Code" = '')) then
-                            //     TransferOrderReceive.Post(Rec);
+                            if (TransferLine."DXC Transfer-from Bin DPP" <> '') then
+                                TransferOrderShip.Post(Rec)  
+                            else if (TransferLine."DXC Transfer-to Bin DPP" <> '') then
+                                TransferOrderReceive.Post(Rec)
+                            else if ((TransferLine."Transfer-from Bin Code" <> '') AND (TransferLine."Transfer-to Bin Code" = '')) then
+                                TransferOrderShip.Post(Rec) 
+                            else if ((TransferLine."Transfer-to Bin Code" <> '') AND (TransferLine."Transfer-from Bin Code" = '')) then
+                                TransferOrderReceive.Post(Rec);                            
                         end;                         
                     end;
                 }
