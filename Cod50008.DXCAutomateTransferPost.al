@@ -168,8 +168,8 @@ codeunit 50008 "DXC Automate Transfer Post"
 
         GetLocation(Rec."Transfer-from Code");
 
-        if not Location."Bin Mandatory" then
-          Location.TESTFIELD("Bin Mandatory",true);
+        // if not Location."Bin Mandatory" then
+        //   Location.TESTFIELD("Bin Mandatory",true);
 
         // if not Location."Directed Put-away and Pick" then
         //   Location.TESTFIELD("Directed Put-away and Pick",true);
