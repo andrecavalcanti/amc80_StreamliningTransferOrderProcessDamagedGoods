@@ -24,13 +24,16 @@ codeunit 50010 "DXC Transfer Order Receive"
         ReleaseTransferDocument : Codeunit "Release Transfer Document";
         FromLocation : Record Location;
         ToLocation : Record Location;
+        WhseTransferRelease : Codeunit "Whse.-Transfer Release";
     begin
 
         if not PTransferHeader."DXC Post Automation" then
           exit;
 
         //Release Transfer Order
-        ReleaseTransferDocument.Run(PTransferHeader);        
+        ReleaseTransferDocument.Run(PTransferHeader);     
+
+        WhseTransferRelease.Release(PTransferHeader);
 
         FromLocation.Get(PTransferHeader."Transfer-from Code");
         ToLocation.Get(PTransferHeader."Transfer-to Code");
@@ -41,10 +44,21 @@ codeunit 50010 "DXC Transfer Order Receive"
           if FromLocation."Require Shipment" then begin
             TransferOrderPostShipment.SetHideValidationDialog(true);
             TransferOrderPostShipment.RUN(PTransferHeader);
-          end;
+          end;          
 
           //Create Whse. Receipt
           GetSourceDocInbound.CreateFromInbndTransferOrderHideDialog(PTransferHeader);
+
+          TransferLine.SETRANGE(TransferLine."Document No.",PTransferHeader."No.");
+          if TransferLine.FINDFIRST then begin
+            TransferLine."Qty. to Receive" := TransferLine.Quantity;
+            TransferLine."Qty. to Receive (Base)" := TransferLine."Quantity (Base)";            
+            TransferLine."Qty. in Transit" := TransferLine.Quantity;
+            TransferLine."Qty. in Transit (Base)" := TransferLine."Quantity (Base)";
+            TransferLine."Quantity Shipped" := TransferLine.Quantity;
+            TransferLine."Qty. Shipped (Base)" := TransferLine."Quantity (Base)";
+            TransferLine.Modify;
+          end;
 
           // Autofill qty to receive
 
@@ -81,6 +95,15 @@ codeunit 50010 "DXC Transfer Order Receive"
 
           //Post Whse. Receipt
           if WhseReceiptLine.FINDFIRST then begin
+
+            WhseReceiptLine.Quantity := TransferLine.Quantity;
+            WhseReceiptLine."Qty. (Base)" := TransferLine."Quantity (Base)";
+            WhseReceiptLine."Qty. Outstanding" := TransferLine.Quantity; 
+            WhseReceiptLine."Qty. Outstanding (Base)" := TransferLine."Quantity (Base)";
+            WhseReceiptLine."Qty. to Receive" := TransferLine.Quantity;
+            WhseReceiptLine."Qty. to Receive (Base)" := TransferLine."Quantity (Base)"; 
+            WhseReceiptLine.Modify;
+
             WhsePostReceipt.SetHideValidationDialog(true);
             WhsePostReceipt.RUN(WhseReceiptLine);
           end;
@@ -111,6 +134,26 @@ codeunit 50010 "DXC Transfer Order Receive"
           CODEUNIT.RUN(CODEUNIT::"TransferOrder-Post Receipt",PTransferHeader);
         end;  
         
+    end;
+
+    [EventSubscriber(ObjectType::Codeunit, Codeunit::"Whse.-Create Source Document", 'OnAfterCheckIfFromTransLine2ShptLine', '', false, false)]
+    local procedure HandleAfterCheckIfFromTransLine2ShptLineOnWhseCreateSourceDocument(var TransLine : Record "Transfer Line";var AutomationPost : Boolean)
+        var 
+          TransHeader : Record "Transfer Header";
+    begin
+        TransHeader.get(TransLine."Document No.");
+        if TransHeader."DXC Post Automation" then
+          AutomationPost := true;
+    end;
+
+     [EventSubscriber(ObjectType::Codeunit, Codeunit::"Whse.-Create Source Document", 'OnAfterCheckIfTransLine2ReceiptLine', '', false, false)]
+    local procedure HandleAfterCheckIfTransLine2ReceiptLineOnWhseCreateSourceDocument(var TransLine : Record "Transfer Line";var AutomationPost : Boolean)
+        var 
+          TransHeader : Record "Transfer Header";
+    begin
+        TransHeader.get(TransLine."Document No.");
+        if TransHeader."DXC Post Automation" then
+          AutomationPost := true;
     end;
 
     [EventSubscriber(ObjectType::Report, Report::"Get Source Documents", 'OnAfterCreateShptHeader', '', false, false)]
@@ -206,6 +249,20 @@ codeunit 50010 "DXC Transfer Order Receive"
         PostedWhseRcptLine.TESTFIELD("DXC Transfer-To Bin DPP");
        
         BinContent.SetRange("Bin Code",PostedWhseRcptLine."DXC Transfer-To Bin DPP");
+    end;
+
+    [EventSubscriber(ObjectType::Table, 32, 'OnBeforeVerifyOnInventory', '', false, false)]
+    local procedure HandleBeforeVerifyOnInventoryOnItemLedgerEntry(ItemLedgEntry : Record "Item Ledger Entry"; var PostAutomation : Boolean)
+      var
+        TransHeader : Record "Transfer Header";
+    begin
+      if (ItemLedgEntry."Entry Type"  <> ItemLedgEntry."Entry Type"::Transfer) then
+        exit;   
+
+      TransHeader.Get(ItemLedgEntry."Order No."); 
+
+      if TransHeader."DXC Post Automation" then
+          PostAutomation := true;   
     end;
 
 
