@@ -231,7 +231,7 @@ codeunit 50008 "DXC Automate Transfer Post"
           ERROR(Text001);
     end;
 
-     [EventSubscriber(ObjectType::Table, 5741, 'OnBeforeInsertEvent', '', false, false)]
+     [EventSubscriber(ObjectType::Table, 5741, 'OnAfterInsertEvent', '', false, false)]
     local procedure HandleBeforeInsertOnTransferLine(var Rec : Record "Transfer Line";RunTrigger : Boolean);
       var
         TransLine : Record "Transfer Line";  
