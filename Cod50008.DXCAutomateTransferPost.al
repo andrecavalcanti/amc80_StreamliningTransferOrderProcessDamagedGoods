@@ -243,9 +243,7 @@ codeunit 50008 "DXC Automate Transfer Post"
         TransLine.SetRange("Document No.",Rec."Document No.");  
         if TransLine.Count > 1 then
           ERROR(Text002);
-
-        if (Bin."Bin Type Code" <> 'PICK') and (Bin."Bin Type Code" <> 'PUT/PICK') then
-          ERROR(Text001);
+        
     end;
 
     [EventSubscriber(ObjectType::Codeunit, 7312, 'OnAfterBinContentExists', '', false, false)]
