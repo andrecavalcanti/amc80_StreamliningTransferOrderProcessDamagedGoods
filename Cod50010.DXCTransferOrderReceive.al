@@ -1,10 +1,8 @@
 codeunit 50010 "DXC Transfer Order Receive"
 {  
-
-
     trigger OnRun();
     var
-        TransferHeader : Record "Transfer Header";
+        TransferHeader : Record "Transfer Header";        
     begin
     end;
 
@@ -15,8 +13,7 @@ codeunit 50010 "DXC Transfer Order Receive"
         GetSourceDocInbound : Codeunit "Get Source Doc. Inbound";
         WhseReceiptHeader : Record "Warehouse Receipt Header";
         WhsePostReceipt : Codeunit "Whse.-Post Receipt";
-        WhseActivityLine : Record "Warehouse Activity Line";
-        TempTransferLine : Record "Transfer Line" temporary;
+        WhseActivityLine : Record "Warehouse Activity Line";        
         WMSMgt : Codeunit "WMS Management";
         WhseActivityRegister : Codeunit "Whse.-Activity-Register";
         TransferOrderPostShipment : Codeunit "TransferOrder-Post Shipment";
@@ -38,6 +35,12 @@ codeunit 50010 "DXC Transfer Order Receive"
         FromLocation.Get(PTransferHeader."Transfer-from Code");
         ToLocation.Get(PTransferHeader."Transfer-to Code");
 
+        // if ((FromLocation."Bin Mandatory") AND (ToLocation."Directed Put-away and Pick")) then begin 
+        if ((not FromLocation."Directed Put-away and Pick") AND (ToLocation."Directed Put-away and Pick")) then begin
+          FromBinMandatoryToDPP(PTransferHeader); 
+          exit;     
+        end;
+
         if ((FromLocation."Bin Mandatory") or (ToLocation."Require Pick")) then begin
           
           //Post Shipment
@@ -49,6 +52,8 @@ codeunit 50010 "DXC Transfer Order Receive"
           //Create Whse. Receipt
           GetSourceDocInbound.CreateFromInbndTransferOrderHideDialog(PTransferHeader);
 
+          WhseReceiptAutoFillQtyToReceive(PTransferHeader);
+         
           TransferLine.SETRANGE(TransferLine."Document No.",PTransferHeader."No.");
           if TransferLine.FINDFIRST then begin
             TransferLine."Qty. to Receive" := TransferLine.Quantity;
@@ -60,8 +65,8 @@ codeunit 50010 "DXC Transfer Order Receive"
             TransferLine.Modify;
           end;
 
-          // Autofill qty to receive
-
+          // Autofill qty to receive          
+          
           TempTransferLine.DELETEALL;
 
           TransferLine.SETRANGE(TransferLine."Document No.",PTransferHeader."No.");
@@ -91,7 +96,7 @@ codeunit 50010 "DXC Transfer Order Receive"
                   ReservEntry.MODIFY;
                 end;
               until WhseReceiptLine.NEXT = 0;
-          end;
+          end;          
 
           //Post Whse. Receipt
           if WhseReceiptLine.FINDFIRST then begin
@@ -134,6 +139,152 @@ codeunit 50010 "DXC Transfer Order Receive"
           CODEUNIT.RUN(CODEUNIT::"TransferOrder-Post Receipt",PTransferHeader);
         end;  
         
+    end;
+
+    local procedure FromBinMandatoryToDPP(PTransferHeader : Record "Transfer Header")
+        var
+          TransferOrderPostShipment : Codeunit "TransferOrder-Post Shipment";  
+          GetSourceDocInbound : Codeunit "Get Source Doc. Inbound";
+          TransferLine : Record "Transfer Line";          
+    begin
+        // Post Shipment        
+        PostTransferShipment(PTransferHeader); 
+
+        //Create Whse. Receipt
+        CreateWhseReceipt(PTransferHeader);
+
+        // Autofill qty to receive
+        WhseReceiptAutoFillQtyToReceive(PTransferHeader);
+
+        //Post Whse. Receipt
+        PostWhseReceipt(PTransferHeader);
+
+        //Put-Away Autofill Qty. to Handle
+        PutAwayAutofillQtyToHandle(PTransferHeader);
+
+        // Register Put-Away
+        RegisterPutAway(PTransferHeader);
+
+    end;
+
+    local procedure CreateWhseReceipt(PTransferHeader : Record "Transfer Header")
+      var
+        GetSourceDocInbound : Codeunit "Get Source Doc. Inbound";
+    begin
+        GetSourceDocInbound.CreateFromInbndTransferOrderHideDialog(PTransferHeader);  
+    end;
+
+    local procedure WhseReceiptAutoFillQtyToReceive(PTransferHeader : Record "Transfer Header")
+        var          
+          TransferLine : Record "Transfer Line";
+          WhseReceiptLine : Record "Warehouse Receipt Line";
+          ReservEntry : Record "Reservation Entry";
+    begin
+        // Autofill qty to receive
+
+        TempTransferLine.DELETEALL;
+
+        TransferLine.SETRANGE(TransferLine."Document No.",PTransferHeader."No.");
+        if TransferLine.FINDFIRST then begin
+          WhseReceiptLine.SETRANGE("Source Type",DATABASE::"Transfer Line");
+          WhseReceiptLine.SETRANGE("Source Subtype",1);
+          WhseReceiptLine.SETRANGE("Source No.",PTransferHeader."No.");
+          //WhseReceiptLine.SETRANGE("Source Line No.",TransferLine."Line No.");
+          WhseReceiptLine.SETRANGE("Source Document",WhseReceiptLine."Source Document"::"Inbound Transfer");
+          if WhseReceiptLine.FINDFIRST then
+            repeat
+              WhseReceiptLine.AutofillQtyToReceive(WhseReceiptLine);
+              TempTransferLine := TransferLine;
+              TempTransferLine.INSERT;
+              // Get Reservation Entry
+              ReservEntry.SETRANGE("Source ID",TransferLine."Document No.");
+              ReservEntry.SETRANGE("Source Prod. Order Line",TransferLine."Line No.");
+              ReservEntry.SETRANGE("Source Type",DATABASE::"Transfer Line");
+              ReservEntry.SETRANGE("Source Subtype",1);
+              ReservEntry.SETRANGE("Reservation Status",ReservEntry."Reservation Status"::Surplus);
+              ReservEntry.SETRANGE("Location Code",TransferLine."Transfer-to Code");
+              ReservEntry.SETRANGE("Item No.",TransferLine."Item No.");
+              ReservEntry.SETRANGE(Positive,true);
+              ReservEntry.SETRANGE("Item Tracking",ReservEntry."Item Tracking"::"Serial No.");
+              if ReservEntry.FINDFIRST then begin
+                ReservEntry.VALIDATE("Qty. to Handle (Base)",TransferLine."Quantity (Base)");
+                ReservEntry.MODIFY;
+              end;
+            until WhseReceiptLine.NEXT = 0;
+        end;  
+    end;
+
+     local procedure PostTransferShipment(PTransferHeader : Record "Transfer Header")
+        var          
+          TransferOrderPostShipment : Codeunit "TransferOrder-Post Shipment";
+    begin        
+        TransferOrderPostShipment.SetHideValidationDialog(true);           
+        TransferOrderPostShipment.RUN(PTransferHeader); 
+    end;
+
+    local procedure PostWhseReceipt(PTransferHeader : Record "Transfer Header")
+        var
+          TransferLine : Record "Transfer Line";
+          WhseReceiptLine : Record "Warehouse Receipt Line";
+          WhsePostReceipt : Codeunit "Whse.-Post Receipt";
+    begin        
+        TransferLine.SETRANGE("Document No.",PTransferHeader."No.");  
+        if TransferLine.FindFirst then begin
+          WhseReceiptLine.SETRANGE("Source Type",DATABASE::"Transfer Line");
+          WhseReceiptLine.SETRANGE("Source Subtype",1);
+          WhseReceiptLine.SETRANGE("Source No.",PTransferHeader."No.");
+          //WhseReceiptLine.SETRANGE("Source Line No.",TransferLine."Line No.");
+          WhseReceiptLine.SETRANGE("Source Document",WhseReceiptLine."Source Document"::"Inbound Transfer");            
+          if WhseReceiptLine.FINDFIRST then begin
+            WhsePostReceipt.SetHideValidationDialog(true);
+            WhsePostReceipt.RUN(WhseReceiptLine);
+            WhsePostReceipt.GetResultMessage;
+          end;
+        end;
+    end;
+
+    local procedure PutAwayAutofillQtyToHandle(PTransferHeader : Record "Transfer Header")
+      var
+        TransferLine : Record "Transfer Line";
+        WhseActivityLine : Record "Warehouse Activity Line";
+    begin
+       //TransferLine.SETRANGE("Document No.",PTransferHeader."No.");  
+       //if TransferLine.FindFirst then begin
+      //if TransferLine.FINDFIRST then
+      //        repeat
+                WhseActivityLine.SETRANGE("Source Document",WhseActivityLine."Source Document"::"Inbound Transfer");
+                WhseActivityLine.SETRANGE("Source Line No.",TempTransferLine."Line No.");
+                WhseActivityLine.SETRANGE("Source No.",TempTransferLine."Document No.");
+                WhseActivityLine.SETRANGE("Source Type",DATABASE::"Transfer Line");
+                WhseActivityLine.SETRANGE("Source Subtype",1);
+                if WhseActivityLine.FINDFIRST then
+                  repeat
+                    WhseActivityLine.AutofillQtyToHandle(WhseActivityLine);
+                  until WhseActivityLine.NEXT = 0;
+         //     until TransferLine.NEXT = 0;  
+        //end;
+    end;
+
+    local procedure RegisterPutAway(PTransferHeader : Record "Transfer Header")
+      var 
+        WhseActivityLine : Record "Warehouse Activity Line";
+        TransferLine : Record "Transfer Line";
+        WMSMgt : Codeunit "WMS Management";
+        WhseActivityRegister : Codeunit "Whse.-Activity-Register";
+    begin
+        //TransferLine.SETRANGE("Document No.",PTransferHeader."No.");  
+        //if TransferLine.FindFirst then begin
+        //  if TransferLine.FINDFIRST then            
+            WhseActivityLine.SETRANGE("Source Document",WhseActivityLine."Source Document"::"Inbound Transfer");
+            WhseActivityLine.SETRANGE("Source Line No.",TempTransferLine."Line No.");
+            WhseActivityLine.SETRANGE("Source No.",TempTransferLine."Document No.");
+            WhseActivityLine.SETRANGE("Source Type",DATABASE::"Transfer Line");
+            WhseActivityLine.SETRANGE("Source Subtype",1);
+            if WhseActivityLine.FINDFIRST then begin
+              WMSMgt.CheckBalanceQtyToHandle(WhseActivityLine);
+              WhseActivityRegister.RUN(WhseActivityLine);
+            end;                 
+        //  end;
     end;
 
     [EventSubscriber(ObjectType::Codeunit, Codeunit::"Whse.-Create Source Document", 'OnAfterCheckIfFromTransLine2ShptLine', '', false, false)]
@@ -264,6 +415,9 @@ codeunit 50010 "DXC Transfer Order Receive"
       if TransHeader."DXC Post Automation" then
           PostAutomation := true;   
     end;
+
+    var
+      TempTransferLine : Record "Transfer Line" temporary;
 
 
     
