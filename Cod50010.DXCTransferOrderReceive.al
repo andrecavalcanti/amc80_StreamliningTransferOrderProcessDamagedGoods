@@ -159,6 +159,9 @@ codeunit 50010 "DXC Transfer Order Receive"
         //Post Whse. Receipt
         PostWhseReceipt(PTransferHeader);
 
+        //Put-Away Update Place Bin Code
+        PutAwayUpdatePlaceBinCode(PTransferHeader);
+
         //Put-Away Autofill Qty. to Handle
         PutAwayAutofillQtyToHandle(PTransferHeader);
 
@@ -243,6 +246,29 @@ codeunit 50010 "DXC Transfer Order Receive"
         end;
     end;
 
+    local procedure PutAwayUpdatePlaceBinCode(PTransferHeader : Record "Transfer Header")
+      var
+        TransferLine : Record "Transfer Line";
+        WhseActivityLine : Record "Warehouse Activity Line";
+    begin
+       
+      WhseActivityLine.SETRANGE("Source Document",WhseActivityLine."Source Document"::"Inbound Transfer");
+      WhseActivityLine.SETRANGE("Source Line No.",TempTransferLine."Line No.");
+      WhseActivityLine.SETRANGE("Source No.",TempTransferLine."Document No.");
+      WhseActivityLine.SETRANGE("Source Type",DATABASE::"Transfer Line");
+      WhseActivityLine.SETRANGE("Source Subtype",1);
+      if WhseActivityLine.FINDFIRST then
+        repeat
+          if ((WhseActivityLine."Action Type" = WhseActivityLine."Action Type"::Place) and 
+            (WhseActivityLine."Bin Code" = '')) then begin
+              WhseActivityLine.Validate("Bin Code",TempTransferLine."DXC Transfer-To Bin DPP");
+              WhseActivityLine.Modify;
+          end;
+          
+        until WhseActivityLine.NEXT = 0;
+
+    end;
+
     local procedure PutAwayAutofillQtyToHandle(PTransferHeader : Record "Transfer Header")
       var
         TransferLine : Record "Transfer Line";
@@ -258,7 +284,7 @@ codeunit 50010 "DXC Transfer Order Receive"
                 WhseActivityLine.SETRANGE("Source Type",DATABASE::"Transfer Line");
                 WhseActivityLine.SETRANGE("Source Subtype",1);
                 if WhseActivityLine.FINDFIRST then
-                  repeat
+                  repeat                    
                     WhseActivityLine.AutofillQtyToHandle(WhseActivityLine);
                   until WhseActivityLine.NEXT = 0;
          //     until TransferLine.NEXT = 0;  

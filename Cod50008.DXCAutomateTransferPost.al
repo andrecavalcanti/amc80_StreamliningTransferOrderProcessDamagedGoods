@@ -12,6 +12,8 @@ codeunit 50008 "DXC Automate Transfer Post"
         Bin : Record Bin;
         Text001 : Label 'Bin Type Code must be Pick';
 
+        Text002 : Label 'Only 1 line is allowed per Transfer Order ';
+
     [EventSubscriber(ObjectType::Table, 5741, 'OnAfterValidateEvent', 'Item No.', false, false)]
     local procedure HandleAfterValidateItemNoOnTransferLine(var Rec : Record "Transfer Line";var xRec : Record "Transfer Line";CurrFieldNo : Integer);
     var
@@ -224,6 +226,23 @@ codeunit 50008 "DXC Automate Transfer Post"
           // Rec.TESTFIELD("DXC Transfer-To Bin DPP",'');
 
         GetBin(Rec."Transfer-to Code",Rec."DXC Transfer-To Bin DPP");
+
+        if (Bin."Bin Type Code" <> 'PICK') and (Bin."Bin Type Code" <> 'PUT/PICK') then
+          ERROR(Text001);
+    end;
+
+     [EventSubscriber(ObjectType::Table, 5741, 'OnBeforeInsertEvent', '', false, false)]
+    local procedure HandleBeforeInsertOnTransferLine(var Rec : Record "Transfer Line";RunTrigger : Boolean);
+      var
+        TransLine : Record "Transfer Line";  
+    begin
+
+        if not IsAutomation(Rec) then
+          exit; 
+
+        TransLine.SetRange("Document No.",Rec."Document No.");  
+        if TransLine.Count > 1 then
+          ERROR(Text002);
 
         if (Bin."Bin Type Code" <> 'PICK') and (Bin."Bin Type Code" <> 'PUT/PICK') then
           ERROR(Text001);
