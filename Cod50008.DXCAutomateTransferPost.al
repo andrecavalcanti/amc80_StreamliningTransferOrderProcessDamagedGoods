@@ -239,6 +239,8 @@ codeunit 50008 "DXC Automate Transfer Post"
 
         if not IsAutomation(Rec) then
           exit; 
+        if not RunTrigger then
+          exit;
 
         TransLine.SetRange("Document No.",Rec."Document No.");  
         if TransLine.Count > 1 then
