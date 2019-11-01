@@ -241,7 +241,7 @@ codeunit 50010 "DXC Transfer Order Receive"
           if WhseReceiptLine.FINDFIRST then begin
             WhsePostReceipt.SetHideValidationDialog(true);
             WhsePostReceipt.RUN(WhseReceiptLine);
-            WhsePostReceipt.GetResultMessage;
+            //WhsePostReceipt.GetResultMessage;
           end;
         end;
     end;
