@@ -254,7 +254,7 @@ page 50006 "DXC Simple Transf Ord  Subform"
                                 FRC='&Lignes de traçabilité d''article',
                                 ENC='Item &Tracking Lines';
                     Image = AllLines;
-                    Visible = false;
+                    Visible = true;
                     action(Shipment)
                     {
                         ApplicationArea = ItemTracking;
