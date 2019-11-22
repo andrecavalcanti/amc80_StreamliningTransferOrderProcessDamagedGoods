@@ -538,9 +538,10 @@ page 50005 "DXC Simple Transfer Order"
                         TransferOrderReceive : Codeunit "DXC Transfer Order Receive";
                         TransferOrderShip : Codeunit "DXC Transfer Order Ship";
                         TransferLine : Record "Transfer Line";
-                    begin
+                        Location : Record Location;
+                    begin 
                         TransferLine.SetRange("Document No.",Rec."No."); 
-                        if TransferLine.FindFirst then begin
+                        if TransferLine.FindFirst then begin                            
                             if (TransferLine."DXC Transfer-from Bin DPP" <> '') then
                                 TransferOrderShip.Post(Rec)  
                             else if (TransferLine."DXC Transfer-to Bin DPP" <> '') then
@@ -548,7 +549,11 @@ page 50005 "DXC Simple Transfer Order"
                             else if ((TransferLine."Transfer-from Bin Code" <> '') AND (TransferLine."Transfer-to Bin Code" = '')) then
                                 TransferOrderShip.Post(Rec) 
                             else if ((TransferLine."Transfer-to Bin Code" <> '') AND (TransferLine."Transfer-from Bin Code" = '')) then
-                                TransferOrderReceive.Post(Rec);                            
+                                TransferOrderReceive.Post(Rec)
+                            else if ((TransferLine."Transfer-to Bin Code" <> '') AND (TransferLine."Transfer-from Bin Code" <> '')) then
+                                TransferOrderShip.Post(Rec)    
+                            else if ((TransferLine."Transfer-to Bin Code" = '') AND (TransferLine."Transfer-from Bin Code" = '')) then
+                                TransferOrderShip.Post(Rec);                         
                         end;                         
                     end;
                 }

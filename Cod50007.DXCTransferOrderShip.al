@@ -31,6 +31,20 @@ codeunit 50007 "DXC Transfer Order Ship"
         FromLocation.Get(TransHeader."Transfer-from Code");
         ToLocation.Get(TransHeader."Transfer-to Code");
 
+        if ((ToLocation."Bin Mandatory") and (FromLocation."Bin Mandatory") and
+        (FromLocation."Directed Put-away and Pick" = false) and (ToLocation."Directed Put-away and Pick" = false)) then begin
+          CODEUNIT.RUN(CODEUNIT::"TransferOrder-Post Shipment",TransHeader);
+          CODEUNIT.RUN(CODEUNIT::"TransferOrder-Post Receipt",TransHeader);  
+          exit;
+        end;
+
+         if ((ToLocation."Bin Mandatory" = false) and (FromLocation."Bin Mandatory" = false) and
+        (FromLocation."Directed Put-away and Pick" = false) and (ToLocation."Directed Put-away and Pick" = false)) then begin
+          CODEUNIT.RUN(CODEUNIT::"TransferOrder-Post Shipment",TransHeader);
+          CODEUNIT.RUN(CODEUNIT::"TransferOrder-Post Receipt",TransHeader);  
+          exit;
+        end;
+
         if ((ToLocation."Bin Mandatory") or (FromLocation."Require Pick")) then begin
           // Create Whse. Shipment
           GetSourceDocOutbound.CreateFromOutbndTransferOrderHideDialog(TransHeader);
