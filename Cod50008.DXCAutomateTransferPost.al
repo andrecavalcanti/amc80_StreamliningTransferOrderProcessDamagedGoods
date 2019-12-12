@@ -231,7 +231,7 @@ codeunit 50008 "DXC Automate Transfer Post"
           ERROR(Text001);
     end;
 
-     [EventSubscriber(ObjectType::Table, 5741, 'OnAfterInsertEvent', '', false, false)]
+    [EventSubscriber(ObjectType::Table, 5741, 'OnAfterInsertEvent', '', false, false)]
     local procedure HandleBeforeInsertOnTransferLine(var Rec : Record "Transfer Line";RunTrigger : Boolean);
       var
         TransLine : Record "Transfer Line";  
@@ -264,6 +264,15 @@ codeunit 50008 "DXC Automate Transfer Post"
         
     begin
         Rec.SetRange("DXC Post Automation",false);
+    end;
+
+    [EventSubscriber(ObjectType::Table, 5741, 'OnAfterInitQtyToReceive', '', false, false)]
+    local procedure HandleAfterInitQtyToReceive(TransferLine : Record "Transfer Line";var SimpleTransOrder : Boolean);
+    begin
+        if not IsAutomation(TransferLine) then
+          exit
+        else
+          SimpleTransOrder := true;
     end;
 
     local procedure IsAutomation(PTransLine : Record "Transfer Line") : Boolean;

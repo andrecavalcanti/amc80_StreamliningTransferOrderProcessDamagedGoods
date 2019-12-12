@@ -21,8 +21,14 @@
            "server": "http://10.2.16.181",                    
            "serverInstance": "CRE-NAV-DEV",
            "port"  : 8049, 
-           "authentication": "Windows",
-           //--------------------------------------         
+           "authentication": "Windows",            
+              // ---------------REFRESH ---------------         
+            //   "name": "Your own server",
+            //   "server": "http://10.2.16.181",                    
+            //   "serverInstance": "CRE-NAV-REFRESH",
+            //   "port"  : 9049, 
+            //   "authentication": "Windows",
+            //--------------------------------------        
             //"tenant": "default",
             //"startupObjectId": 22,
              "schemaUpdateMode": "Synchronize"

@@ -1,7 +1,7 @@
 codeunit 50007 "DXC Transfer Order Ship"
 {
     trigger OnRun();
-    var
+    var        
         TransferHeader : Record "Transfer Header";
     begin
     end;
